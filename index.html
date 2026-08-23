@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vienna German Tutor</title>
+<style>
+:root { color-scheme: light; }
+:focus-visible { outline: 2px solid #BA7517; outline-offset: 2px; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, 'Helvetica Neue', sans-serif;
+  background: #fff;
+  color: #2c2c2a;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.header {
+  padding: 1.25rem 1.5rem 0;
+  border-bottom: 1px solid #e8e6e0;
+  margin-bottom: 0;
+}
+.header-top { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+h1 { font-size: 19px; font-weight: 600; color: #2c2c2a; }
+.header-sub { font-size: 13px; color: #888780; }
+.tabs { display: flex; margin-top: 1rem; }
+.tab {
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: #888780;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.tab.active { color: #BA7517; border-bottom-color: #BA7517; }
+.tab:hover:not(.active) { color: #2c2c2a; }
+.section { display: none; padding: 1.25rem 1.5rem 2rem; }
+.section.active { display: block; }
+
+/* Progress */
+.progress-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #888780;
+  margin-bottom: 6px;
+}
+.progress-bar { height: 5px; background: #F1EFE8; border-radius: 100px; overflow: hidden; margin-bottom: 1.25rem; }
+.progress-fill { height: 100%; background: #BA7517; border-radius: 100px; transition: width 0.4s ease; }
+
+/* Phrase Cards */
+.phrase-card {
+  border: 1px solid #e8e6e0;
+  border-radius: 10px;
+  padding: 1rem 1.125rem;
+  margin-bottom: 8px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: #fff;
+  transition: background 0.2s, opacity 0.2s;
+}
+.phrase-card.learned { background: #faf9f6; opacity: 0.6; }
+.cb {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 1.5px solid #d3d1c7;
+  flex-shrink: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 2px; background: #fff;
+  transition: all 0.15s; font-size: 11px; color: transparent;
+  padding: 0; font-family: inherit; line-height: 1;
+}
+.cb.checked { background: #BA7517; border-color: #BA7517; color: #fff; }
+.phrase-body { flex: 1; min-width: 0; }
+.phrase-german { font-size: 17px; font-weight: 600; color: #2c2c2a; margin-bottom: 1px; }
+.phrase-card.learned .phrase-german { text-decoration: line-through; color: #888780; }
+.phrase-english { font-size: 13px; color: #888780; margin-bottom: 8px; }
+.pronunc-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-size: 11px; font-weight: 500;
+  background: #FAEEDA; color: #633806;
+  margin-bottom: 8px;
+}
+.cultural {
+  font-size: 12px; color: #888780;
+  border-left: 2px solid #FAC775;
+  padding-left: 8px; line-height: 1.5;
+}
+
+/* Flashcard */
+.drill-status { font-size: 13px; color: #888780; text-align: center; margin: 1rem 0 0.75rem; }
+.flip-container {
+  perspective: 800px;
+  max-width: 440px; margin: 0 auto 1.25rem;
+  height: 190px; cursor: pointer;
+}
+.flip-card {
+  width: 100%; height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.42s ease;
+  position: relative;
+}
+.flip-card.flipped { transform: rotateY(180deg); }
+.flip-face {
+  position: absolute; inset: 0;
+  border: 1px solid #e8e6e0; border-radius: 12px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  text-align: center; padding: 1.5rem;
+}
+.flip-face.front { background: #fff; }
+.flip-face.back { background: #FAEEDA; transform: rotateY(180deg); }
+.flip-hint { font-size: 11px; color: #888780; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 0.75rem; }
+.flip-word { font-size: 22px; font-weight: 600; color: #2c2c2a; margin-bottom: 5px; }
+.flip-sub { font-size: 13px; color: #888780; }
+.flip-pronunc { font-size: 13px; color: #BA7517; margin-top: 6px; font-style: italic; }
+.rating-row { display: flex; gap: 8px; justify-content: center; }
+.rate-btn {
+  padding: 7px 16px; border-radius: 8px;
+  border: 1px solid #e8e6e0; background: #fff;
+  font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s;
+}
+.rate-btn.easy { color: #3B6D11; }
+.rate-btn.easy:hover { background: #EAF3DE; border-color: #C0DD97; }
+.rate-btn.medium { color: #BA7517; }
+.rate-btn.medium:hover { background: #FAEEDA; border-color: #FAC775; }
+.rate-btn.hard { color: #A32D2D; }
+.rate-btn.hard:hover { background: #FCEBEB; border-color: #F7C1C1; }
+.drill-empty { text-align: center; padding: 3rem 1rem; color: #888780; font-size: 14px; }
+.drill-reset {
+  margin-top: 1rem; padding: 8px 18px; border-radius: 8px;
+  border: 1px solid #e8e6e0; background: #fff;
+  font-family: inherit; font-size: 13px; font-weight: 500;
+  color: #BA7517; cursor: pointer; transition: all 0.15s;
+}
+.drill-reset:hover { background: #FAEEDA; border-color: #FAC775; }
+
+/* Scenarios */
+.scenario-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px; margin-bottom: 1.25rem;
+}
+.sc-card {
+  border: 1px solid #e8e6e0; border-radius: 10px;
+  padding: 0.875rem 1rem;
+  cursor: pointer; background: #fff;
+  transition: all 0.15s; text-align: left;
+  display: block; width: 100%; font-family: inherit;
+}
+.sc-card:hover { border-color: #BA7517; background: #FAEEDA; }
+.sc-card.active { border-color: #BA7517; border-width: 1.5px; background: #FAEEDA; }
+.sc-icon { font-size: 18px; margin-bottom: 5px; }
+.sc-name { font-size: 13px; font-weight: 600; color: #2c2c2a; }
+.sc-place { font-size: 11px; color: #888780; margin-top: 1px; }
+.script-box { border: 1px solid #e8e6e0; border-radius: 10px; overflow: hidden; }
+.script-top {
+  background: #faf9f6; padding: 9px 1.125rem;
+  font-size: 11px; font-weight: 600; color: #888780;
+  letter-spacing: 0.06em; border-bottom: 1px solid #e8e6e0;
+  text-transform: uppercase;
+}
+.script-body { padding: 1rem 1.125rem; }
+.line { display: flex; gap: 10px; margin-bottom: 14px; }
+.speaker {
+  font-size: 10px; font-weight: 700; color: #888780;
+  width: 44px; flex-shrink: 0;
+  text-transform: uppercase; letter-spacing: 0.07em;
+  padding-top: 2px;
+}
+.line-body { flex: 1; }
+.line-de { font-size: 14px; color: #2c2c2a; line-height: 1.4; }
+.line-de .hl { background: #FAEEDA; color: #633806; padding: 1px 5px; border-radius: 4px; font-weight: 600; }
+.line-en { font-size: 12px; color: #888780; margin-top: 2px; }
+.no-scenario { text-align: center; padding: 3rem 1rem; color: #888780; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <h1>Vienna German Tutor</h1>
+    <span class="header-sub">Daily phrases for life in Vienna</span>
+  </div>
+  <div class="tabs" role="tablist" aria-label="Practice modes">
+    <button type="button" role="tab" id="tab-lesson" aria-controls="lesson" aria-selected="true" tabindex="0" class="tab active" onclick="showTab('lesson', this)" onkeydown="tabKey(event)">Today's lesson</button>
+    <button type="button" role="tab" id="tab-drill" aria-controls="drill" aria-selected="false" tabindex="-1" class="tab" onclick="showTab('drill', this)" onkeydown="tabKey(event)">Quick drill</button>
+    <button type="button" role="tab" id="tab-scenario" aria-controls="scenario" aria-selected="false" tabindex="-1" class="tab" onclick="showTab('scenario', this)" onkeydown="tabKey(event)">Scenario practice</button>
+  </div>
+</div>
+
+<div id="lesson" class="section active" role="tabpanel" aria-labelledby="tab-lesson"></div>
+<div id="drill" class="section" role="tabpanel" aria-labelledby="tab-drill"></div>
+<div id="scenario" class="section" role="tabpanel" aria-labelledby="tab-scenario"></div>
+
+<div id="live" class="sr-only" role="status" aria-live="polite"></div>
+
+<script>
+const PHRASES = [
+  { id:1, german:'Grüß Gott', english:'Hello (formal)', pronunciation:'GRÜSS got',
+    cultural:'The standard formal greeting in Vienna. Literally "May God greet you." Use it with shopkeepers, officials, and anyone older than you. Saying "Hallo" sounds like a tourist.' },
+  { id:2, german:'Servus!', english:'Hi / Bye (casual)', pronunciation:'SAIR-voos',
+    cultural:'The warm casual greeting between friends — works as both hello and goodbye. Don\'t use it with strangers or at the Magistrat. When a local says it to you, you\'ve arrived.' },
+  { id:3, german:'Baba!', english:'Bye! (very Viennese)', pronunciation:'BAH-bah',
+    cultural:'The most distinctly Viennese farewell. Often said twice — "Baba baba!" Tourists who use this instantly endear themselves to locals.' },
+  { id:4, german:'Bitte schön', english:'Here you go / You\'re welcome', pronunciation:'BIT-eh shern',
+    cultural:'You\'ll hear this from waiters and shopkeepers when serving you. Use it yourself when handing anything to someone — it smooths every interaction.' },
+  { id:5, german:'Passt, danke', english:'That\'s fine, thanks', pronunciation:'PAHSST DAHN-keh',
+    cultural:'"Passt!" alone means "it works" or "perfect." With "danke" it\'s a graceful way to close a transaction or politely decline something extra.' },
+  { id:6, german:'Einen Melange, bitte', english:'A Melange coffee, please', pronunciation:'EYE-nen meh-LAHNG-eh BIT-eh',
+    cultural:'The signature Viennese coffee — espresso with steamed milk foam. In a traditional Kaffeehaus, always order a Melange, not a "cappuccino." The latter marks you as a visitor.' },
+  { id:7, german:'Zahlen, bitte', english:'The bill, please', pronunciation:'TSAH-len BIT-eh',
+    cultural:'In Viennese cafés, waiters never bring the bill unprompted. Make eye contact and say this. Splitting bills is uncommon — one person typically pays.' },
+  { id:8, german:'Stimmt so', english:'Keep the change', pronunciation:'SHTIMMT zo',
+    cultural:'Said when paying cash to let the waiter keep the change as a tip. Tipping 10% or rounding up is standard in Kaffeehäuser. This phrase will get you a warm goodbye.' },
+  { id:9, german:'Was kostet das?', english:'How much does this cost?', pronunciation:'vahs KOS-tet dahs',
+    cultural:'Useful at the Naschmarkt, smaller shops, or anywhere prices aren\'t displayed. Vendors appreciate the effort — even if you both switch to English straight after.' },
+  { id:10, german:'Das nehme ich', english:'I\'ll take this one', pronunciation:'dahs NAY-meh ikh',
+    cultural:'Decisive and clear — Viennese appreciate directness in shops. Point at the item and say this instead of fumbling for a long explanation.' },
+  { id:11, german:'Eine Jahreskarte, bitte', english:'An annual U-Bahn pass, please', pronunciation:'EYE-neh YAH-res-kar-teh BIT-eh',
+    cultural:'At €365 it\'s exactly €1 a day — Vienna\'s best value. Buy at any U-Bahn Schalter (ticket window) or Tabak shop. Bring a passport photo.' },
+  { id:12, german:'Wo ist die nächste U-Bahn-Station?', english:'Where is the nearest U-Bahn station?', pronunciation:'voh ist dee NAYKH-steh OO-bahn-shta-TSEE-on',
+    cultural:'Vienna\'s U-Bahn has 5 lines (U1–U6, no U5 yet), runs until 0:30 on weekdays, and all night on weekends. It\'s clean, punctual, and essential.' },
+  { id:13, german:'Entschuldigung', english:'Excuse me / Sorry', pronunciation:'ent-SHOOL-dee-goong',
+    cultural:'Used to get someone\'s attention or apologize for bumping into them. In narrow Billa or Hofer aisles you\'ll need this constantly.' },
+  { id:14, german:'Ich verstehe nicht', english:'I don\'t understand', pronunciation:'ikh fair-SHTAY-eh nikht',
+    cultural:'Say this clearly and most Viennese will slow down, repeat, or switch to English. Trying German first is always appreciated — then admitting you\'re lost is charming, not embarrassing.' },
+  { id:15, german:'Wie komme ich zum...?', english:'How do I get to...?', pronunciation:'vee KOM-meh ikh tsoom',
+    cultural:'Follow with a destination: "...Stephansdom?" "...Naschmarkt?" "...Rathaus?" Viennese are happy to help, and often give more detail than you need.' },
+  { id:16, german:'Im zweiten Bezirk', english:'In the 2nd district', pronunciation:'im TSVYE-ten beh-TSIRK',
+    cultural:'Vienna\'s 23 Bezirke are how locals navigate the city. 2nd = Leopoldstadt (Prater), 3rd = Landstraße, 4th = Wieden. Knowing the district numbers marks you as someone who\'s here to stay.' },
+  { id:17, german:'Einen Moment, bitte', english:'One moment, please', pronunciation:'EYE-nen moh-MENT BIT-eh',
+    cultural:'Invaluable at the Magistrat or any counter when you need time to find a document. Viennese bureaucracy is real, but officials are courteous if you are.' },
+  { id:18, german:'Haben Sie...?', english:'Do you have...?', pronunciation:'HAH-ben zee',
+    cultural:'Follow with what you need: "Haben Sie Bio-Milch?" Works in any shop. Staff will point you to the right aisle or fetch someone who speaks English.' },
+  { id:19, german:'Gehen Sie geradeaus', english:'Go straight ahead', pronunciation:'GAY-en zee geh-RAH-deh-ows',
+    cultural:'Key direction phrase you\'ll hear from locals. Others to know: links (left), rechts (right), an der Ecke (at the corner), die erste Straße links (first street on the left).' },
+  { id:20, german:'Schönen Tag noch!', english:'Have a nice day!', pronunciation:'SHERN-en tahk nokh',
+    cultural:'The standard parting phrase in shops and cafés. Reply with "Danke, Ihnen auch!" (DAHN-keh EE-nen owkh) — "Thanks, you too!" — and you\'ll sound like a local.' },
+];
+
+const SCENARIOS = [
+  { id:'cafe', icon:'☕', name:'Kaffeehaus', place:'Café Central or Landtmann',
+    script:[
+      { s:'You', de:'<span class="hl">Grüß Gott.</span> Einen Platz für eine Person, bitte.', en:'Hello. A table for one, please.' },
+      { s:'Waiter', de:'Bitte schön.', en:'Right this way.' },
+      { s:'You', de:'Danke. <span class="hl">Einen Melange</span> und ein Stück Apfelstrudel, bitte.', en:'Thanks. A Melange and a slice of apple strudel, please.' },
+      { s:'Waiter', de:'Sofort.', en:'Right away.' },
+      { s:'Waiter', de:'<span class="hl">Bitte schön.</span>', en:'(places your order)' },
+      { s:'You', de:'Danke schön.', en:'Thank you.' },
+      { s:'You', de:'<span class="hl">Zahlen, bitte.</span>', en:'The bill, please.' },
+      { s:'Waiter', de:'Das macht 9 Euro 80.', en:'That\'s €9.80.' },
+      { s:'You', de:'(hands €11) <span class="hl">Stimmt so.</span>', en:'Keep the change.' },
+      { s:'Waiter', de:'Vielen Dank! Auf Wiedersehen.', en:'Many thanks! Goodbye.' },
+      { s:'You', de:'<span class="hl">Baba!</span>', en:'Bye!' },
+    ]},
+  { id:'ubahn', icon:'🚇', name:'U-Bahn Jahreskarte', place:'U-Bahn ticket window',
+    script:[
+      { s:'You', de:'<span class="hl">Grüß Gott.</span> <span class="hl">Eine Jahreskarte, bitte.</span>', en:'Hello. An annual pass, please.' },
+      { s:'Clerk', de:'Haben Sie ein Foto dabei?', en:'Do you have a photo with you?' },
+      { s:'You', de:'Ja, <span class="hl">bitte schön.</span>', en:'Yes, here you go.' },
+      { s:'Clerk', de:'Und Ihren Lichtbildausweis, bitte.', en:'And your photo ID, please.' },
+      { s:'You', de:'Bitte.', en:'(hands over ID)' },
+      { s:'Clerk', de:'Das macht 365 Euro.', en:'That\'s €365.' },
+      { s:'You', de:'<span class="hl">Bitte schön.</span>', en:'(pays)' },
+      { s:'Clerk', de:'Hier ist Ihre Jahreskarte. <span class="hl">Schönen Tag noch!</span>', en:'Here is your annual pass. Have a nice day!' },
+      { s:'You', de:'Danke schön. <span class="hl">Baba!</span>', en:'Thank you. Bye!' },
+    ]},
+  { id:'magistrat', icon:'🏛️', name:'Magistrat', place:'Local government office',
+    script:[
+      { s:'You', de:'<span class="hl">Grüß Gott.</span> Ich habe einen Termin. Mein Name ist...', en:'Hello. I have an appointment. My name is...' },
+      { s:'Staff', de:'<span class="hl">Einen Moment, bitte.</span>', en:'One moment, please.' },
+      { s:'Staff', de:'Bitte nehmen Sie Platz.', en:'Please take a seat.' },
+      { s:'You', de:'Danke schön.', en:'Thank you.' },
+      { s:'Staff', de:'Sie brauchen Ihren Reisepass und einen Meldezettel.', en:'You need your passport and a registration form (Meldezettel).' },
+      { s:'You', de:'<span class="hl">Entschuldigung</span> — können Sie das wiederholen?', en:'Excuse me — can you repeat that?' },
+      { s:'Staff', de:'Reisepass. Und den Meldezettel — das Anmeldeformular.', en:'Passport. And the Meldezettel — the registration form.' },
+      { s:'You', de:'Verstanden. <span class="hl">Bitte schön.</span>', en:'Understood. Here you go.' },
+      { s:'Staff', de:'Gut. Alles in Ordnung. Auf Wiedersehen.', en:'Good. Everything is in order. Goodbye.' },
+      { s:'You', de:'Vielen Dank. <span class="hl">Schönen Tag noch!</span>', en:'Many thanks. Have a nice day!' },
+    ]},
+  { id:'shopping', icon:'🛒', name:'Billa / Hofer', place:'Supermarket',
+    script:[
+      { s:'You', de:'<span class="hl">Entschuldigung.</span> <span class="hl">Haben Sie</span> Bio-Milch?', en:'Excuse me. Do you have organic milk?' },
+      { s:'Staff', de:'Ja, im nächsten Gang links.', en:'Yes, in the next aisle on the left.' },
+      { s:'You', de:'Danke schön.', en:'Thank you.' },
+      { s:'Cashier', de:'<span class="hl">Grüß Gott.</span> Haben Sie eine Kundenkarte?', en:'Hello. Do you have a loyalty card?' },
+      { s:'You', de:'Nein, danke.', en:'No, thanks.' },
+      { s:'Cashier', de:'Das macht 14 Euro 60.', en:'That\'s €14.60.' },
+      { s:'You', de:'<span class="hl">Bitte schön.</span>', en:'(pays)' },
+      { s:'Cashier', de:'Dankeschön. <span class="hl">Schönen Tag noch!</span>', en:'Thank you. Have a nice day!' },
+      { s:'You', de:'Danke, Ihnen auch! <span class="hl">Baba!</span>', en:'Thanks, you too! Bye!' },
+    ]},
+  { id:'directions', icon:'🗺️', name:'Directions', place:'2nd, 3rd & 4th Bezirk',
+    script:[
+      { s:'You', de:'<span class="hl">Entschuldigung.</span> <span class="hl">Wie komme ich zum</span> Prater?', en:'Excuse me. How do I get to the Prater?' },
+      { s:'Local', de:'<span class="hl">Gehen Sie geradeaus,</span> dann rechts an der Ampel.', en:'Go straight ahead, then right at the traffic lights.' },
+      { s:'You', de:'<span class="hl">Entschuldigung</span> — können Sie das wiederholen?', en:'Sorry — can you repeat that?' },
+      { s:'Local', de:'Geradeaus, dann rechts. Ungefähr 10 Minuten zu Fuß.', en:'Straight, then right. About 10 minutes on foot.' },
+      { s:'You', de:'Ah, verstanden! Das ist <span class="hl">im zweiten Bezirk,</span> ja?', en:'Ah, got it! That\'s in the 2nd district, right?' },
+      { s:'Local', de:'Genau — Leopoldstadt. Viel Spaß!', en:'Exactly — Leopoldstadt. Have fun!' },
+      { s:'You', de:'Danke schön! <span class="hl">Baba!</span>', en:'Thank you! Bye!' },
+    ]},
+];
+
+function getWeekKey() {
+  const d = new Date();
+  const jan1 = new Date(d.getFullYear(), 0, 1);
+  // Compare local midnights, not raw timestamps: a DST shift shortens or
+  // lengthens the span by an hour, which would otherwise drag the week
+  // boundary off midnight and wipe progress recorded either side of it.
+  const today = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const days = Math.round((today - jan1) / 86400000);
+  const week = Math.floor((days + jan1.getDay()) / 7) + 1;
+  return d.getFullYear() + '-W' + week;
+}
+
+function loadState() {
+  try { return JSON.parse(localStorage.getItem('vgt_v1') || '{}'); }
+  catch { return {}; }
+}
+
+function saveState() {
+  try { localStorage.setItem('vgt_v1', JSON.stringify(state)); } catch {}
+}
+
+let state = loadState();
+const thisWeek = getWeekKey();
+if (state.weekKey !== thisWeek) {
+  state = { weekKey: thisWeek, learnedThisWeek: [], ratings: state.ratings || {} };
+  saveState();
+}
+// Carry over progress written by the old `learnedToday` key.
+const needsMigration = ('learnedToday' in state) || ('weekCount' in state);
+if (!Array.isArray(state.learnedThisWeek)) {
+  state.learnedThisWeek = Array.isArray(state.learnedToday) ? state.learnedToday : [];
+}
+delete state.learnedToday;
+delete state.weekCount;
+if (!state.ratings || typeof state.ratings !== 'object') state.ratings = {};
+if (needsMigration) saveState();
+
+// The weekly goal is every phrase, learned once. A stride of 3 gives seven
+// distinct daily sets whose union is the whole deck; the old stride of 4 only
+// produced five distinct sets, so Fri/Sat repeated Sun/Mon and the goal of 25
+// sat above the 20 phrases that actually exist.
+const WEEK_GOAL = PHRASES.length;
+const CARDS_PER_DAY = 5;
+const dayOfWeek = new Date().getDay();
+const offset = (dayOfWeek * 3) % PHRASES.length;
+const todayPhrases = [];
+for (let i = 0; i < CARDS_PER_DAY; i++) todayPhrases.push(PHRASES[(offset + i) % PHRASES.length]);
+
+function buildDrillQueue() {
+  const easy = new Set(Object.keys(state.ratings).filter(k => state.ratings[k] === 'easy'));
+  const hard = PHRASES.filter(p => state.ratings[String(p.id)] === 'hard');
+  const rest = PHRASES.filter(p => !easy.has(String(p.id)) && state.ratings[String(p.id)] !== 'hard');
+  return [...hard, ...rest];
+}
+
+let drillQueue = [];
+let drillIdx = 0;
+let flipped = false;
+let activeScenario = null;
+
+// A pass is a fixed snapshot of the queue. Ratings are recorded as you go but
+// only take effect on the next pass, so the deck can never be reordered out
+// from under the index we are about to advance.
+function startDrillPass(avoidId) {
+  drillQueue = buildDrillQueue();
+  // Hard cards lead the next pass, so rating the final card hard would
+  // otherwise hand it straight back as card 1. Demote it one slot: still
+  // reviewed early, but never twice in a row.
+  if (avoidId != null && drillQueue.length > 1 && drillQueue[0].id === avoidId) {
+    drillQueue.splice(1, 0, drillQueue.shift());
+  }
+  drillIdx = 0;
+  flipped = false;
+}
+startDrillPass();
+
+function announce(msg) {
+  const l = document.getElementById('live');
+  if (l) l.textContent = msg;
+}
+
+// Standard tablist keyboard contract: arrows move between tabs, Home/End jump
+// to the ends, and only the selected tab is in the document tab order.
+function tabKey(e) {
+  const tabs = [...document.querySelectorAll('.tab')];
+  const i = tabs.indexOf(e.currentTarget);
+  let next = -1;
+  if (e.key === 'ArrowRight') next = (i + 1) % tabs.length;
+  else if (e.key === 'ArrowLeft') next = (i - 1 + tabs.length) % tabs.length;
+  else if (e.key === 'Home') next = 0;
+  else if (e.key === 'End') next = tabs.length - 1;
+  if (next < 0) return;
+  e.preventDefault();
+  tabs[next].focus();
+  tabs[next].click();
+}
+
+function showTab(id, btn) {
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.remove('active');
+    t.setAttribute('aria-selected', 'false');
+    t.setAttribute('tabindex', '-1');
+  });
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  btn.setAttribute('aria-selected', 'true');
+  btn.setAttribute('tabindex', '0');
+  if (id === 'drill') { startDrillPass(); renderDrill(); }
+  if (id === 'scenario') renderScenario();
+}
+
+function togglePhrase(id) {
+  const s = new Set(state.learnedThisWeek);
+  if (s.has(id)) s.delete(id); else s.add(id);
+  state.learnedThisWeek = [...s];
+  saveState();
+  renderLesson();
+  announce(`${s.size} of ${WEEK_GOAL} phrases learned this week.`);
+}
+
+function renderLesson() {
+  // innerHTML replacement drops the focused element, which would dump a
+  // keyboard user back to the top of the page on every checkbox press.
+  const prev = document.activeElement;
+  const refocusId = prev && prev.classList.contains('cb') ? prev.getAttribute('data-phrase-id') : null;
+  const learned = new Set(state.learnedThisWeek);
+  const count = learned.size;
+  const pct = Math.min(100, Math.round((count / WEEK_GOAL) * 100));
+  let html = `
+    <div class="progress-row">
+      <span>This week's progress</span>
+      <span>${count} of ${WEEK_GOAL} phrases</span>
+    </div>
+    <div class="progress-bar" role="progressbar" aria-label="This week's progress" aria-valuemin="0" aria-valuemax="${WEEK_GOAL}" aria-valuenow="${count}"><div class="progress-fill" style="width:${pct}%"></div></div>
+  `;
+  todayPhrases.forEach(p => {
+    const done = learned.has(p.id);
+    html += `<div class="phrase-card${done ? ' learned' : ''}">
+      <button type="button" class="cb${done ? ' checked' : ''}" data-phrase-id="${p.id}" aria-pressed="${done}" aria-label="Mark ${p.german} as learned" onclick="togglePhrase(${p.id})">✓</button>
+      <div class="phrase-body">
+        <div class="phrase-german" lang="de">${p.german}</div>
+        <div class="phrase-english">${p.english}</div>
+        <div class="pronunc-badge">Say it: ${p.pronunciation}</div>
+        <div class="cultural">${p.cultural}</div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('lesson').innerHTML = html;
+  if (refocusId) {
+    const again = document.querySelector(`.cb[data-phrase-id="${refocusId}"]`);
+    if (again) again.focus();
+  }
+}
+
+function isDrillFocus(el) {
+  return !!el && (el.id === 'fcw' || el.classList.contains('rate-btn') || el.classList.contains('drill-reset'));
+}
+
+function restoreDrillFocus() {
+  const t = document.getElementById('fcw') || document.querySelector('.drill-reset');
+  if (t) t.focus();
+}
+
+function renderDrill() {
+  const el = document.getElementById('drill');
+  // Same reason as renderLesson: rating a card replaces the whole panel, so
+  // without this the keyboard user loses their place after every rating.
+  const keepFocus = isDrillFocus(document.activeElement);
+  if (drillQueue.length === 0) {
+    el.innerHTML = `
+      <div class="drill-empty">
+        <p>Every phrase is rated easy — great work.</p>
+        <button type="button" class="drill-reset" onclick="resetDeck()">Start the deck again</button>
+      </div>`;
+    if (keepFocus) restoreDrillFocus();
+    return;
+  }
+  if (drillIdx >= drillQueue.length) drillIdx = 0;
+  const p = drillQueue[drillIdx];
+  const badge = state.ratings[String(p.id)] === 'hard' ? ' · <span style="color:#A32D2D;font-size:11px;">Review card</span>' : '';
+  el.innerHTML = `
+    <div class="drill-status">Card ${drillIdx + 1} of ${drillQueue.length}${badge} — tap to flip</div>
+    <div class="flip-container" id="fcw" role="button" tabindex="0" aria-pressed="${flipped}" aria-label="${flipCardLabel(p)}" onclick="flipCard()" onkeydown="flipKey(event)">
+      <div class="flip-card${flipped ? ' flipped' : ''}" id="fc">
+        <div class="flip-face front" id="fcFront" aria-hidden="${flipped}">
+          <div class="flip-hint">English — what's the German?</div>
+          <div class="flip-word">${p.english}</div>
+          <div class="flip-sub" style="margin-top:8px;font-size:12px;">Tap to reveal</div>
+        </div>
+        <div class="flip-face back" id="fcBack" aria-hidden="${!flipped}">
+          <div class="flip-hint">German</div>
+          <div class="flip-word" lang="de">${p.german}</div>
+          <div class="flip-pronunc">${p.pronunciation}</div>
+        </div>
+      </div>
+    </div>
+    <div class="rating-row" id="rr" style="visibility:${flipped ? 'visible' : 'hidden'}">
+      <button class="rate-btn easy" onclick="rate(${p.id},'easy')">Easy ✓</button>
+      <button class="rate-btn medium" onclick="rate(${p.id},'medium')">Medium</button>
+      <button class="rate-btn hard" onclick="rate(${p.id},'hard')">Hard — back tomorrow</button>
+    </div>
+  `;
+  if (keepFocus) restoreDrillFocus();
+}
+
+// backface-visibility hides the unrevealed side visually but leaves its text in
+// the accessibility tree, so a screen reader would read the answer out before
+// the user flipped. aria-hidden is what actually hides it.
+function flipCardLabel(p) {
+  return flipped
+    ? `Flashcard revealed. German: ${p.german}. Activate to hide.`
+    : `Flashcard: ${p.english}. Activate to reveal the German.`;
+}
+
+function flipCard() {
+  flipped = !flipped;
+  const p = drillQueue[drillIdx];
+  const fc = document.getElementById('fc');
+  const rr = document.getElementById('rr');
+  const fcw = document.getElementById('fcw');
+  const front = document.getElementById('fcFront');
+  const back = document.getElementById('fcBack');
+  if (fc) fc.classList.toggle('flipped', flipped);
+  if (rr) rr.style.visibility = flipped ? 'visible' : 'hidden';
+  if (front) front.setAttribute('aria-hidden', String(flipped));
+  if (back) back.setAttribute('aria-hidden', String(!flipped));
+  if (fcw) {
+    fcw.setAttribute('aria-pressed', String(flipped));
+    if (p) fcw.setAttribute('aria-label', flipCardLabel(p));
+  }
+  if (p) announce(flipped ? `German: ${p.german}. ${p.pronunciation}` : 'Answer hidden.');
+}
+
+function flipKey(e) {
+  if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+    e.preventDefault();
+    flipCard();
+  }
+}
+
+function rate(id, level) {
+  state.ratings[String(id)] = level;
+  saveState();
+  if (drillIdx + 1 >= drillQueue.length) {
+    // End of the pass — now it is safe to apply the new ratings, which retire
+    // easy cards and pull hard ones to the front of the next pass.
+    startDrillPass(id);
+  } else {
+    drillIdx++;
+    flipped = false;
+  }
+  renderDrill();
+  const next = drillQueue[drillIdx];
+  announce(next
+    ? `Rated ${level}. Card ${drillIdx + 1} of ${drillQueue.length}: ${next.english}`
+    : `Rated ${level}. Deck complete.`);
+}
+
+function resetDeck() {
+  state.ratings = {};
+  saveState();
+  startDrillPass();
+  renderDrill();
+}
+
+function renderScenario() {
+  const el = document.getElementById('scenario');
+  const buttons = SCENARIOS.map(sc => `
+    <button type="button" class="sc-card${activeScenario === sc.id ? ' active' : ''}" aria-pressed="${activeScenario === sc.id}" onclick="selectScenario('${sc.id}')">
+      <div class="sc-icon" aria-hidden="true">${sc.icon}</div>
+      <div class="sc-name">${sc.name}</div>
+      <div class="sc-place">${sc.place}</div>
+    </button>`).join('');
+
+  let scriptHtml = '<div class="no-scenario">Pick a scenario above to see the full script</div>';
+  if (activeScenario) {
+    const sc = SCENARIOS.find(s => s.id === activeScenario);
+    if (sc) {
+      const lines = sc.script.map(l => `
+        <div class="line">
+          <div class="speaker">${l.s}</div>
+          <div class="line-body">
+            <div class="line-de" lang="de">${l.de}</div>
+            <div class="line-en">${l.en}</div>
+          </div>
+        </div>`).join('');
+      scriptHtml = `
+        <div class="script-box">
+          <div class="script-top">${sc.name} · ${sc.place}</div>
+          <div class="script-body">${lines}</div>
+        </div>`;
+    }
+  }
+
+  el.innerHTML = `<div class="scenario-grid">${buttons}</div>${scriptHtml}`;
+}
+
+function selectScenario(id) {
+  activeScenario = activeScenario === id ? null : id;
+  renderScenario();
+}
+
+renderLesson();
+renderDrill();
+renderScenario();
+</script>
+</body>
+</html>
